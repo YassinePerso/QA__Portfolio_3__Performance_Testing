@@ -1,0 +1,32 @@
+# DEMO: This workflow demonstrates how to pass environment variables to k6 via
+# the grafana/run-k6-action GitHub Action. It is not part of the real CI
+# pipeline. See ci.yaml for the authoritative test workflow.
+name: Environment Variables Test Workflow
+on: [push]
+
+permissions:
+  contents: read
+
+jobs:
+  basic_k6_test:
+    name: k6 test run - environment variable example
+    runs-on: ubuntu-latest
+
+    services:
+      quickpizza:
+        image: ghcr.io/grafana/quickpizza-local:0.15.27@sha256:be5efb0bcbbed3ad0eb26cc6dc6a0d7ba74a3070be476f7b1859e88231983a4e # zizmor: ignore[unpinned-images]
+        ports:
+          - 3355:3333
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Setup k6
+        uses: grafana/setup-k6-action@db07bd9765aac508ef18982e52ab937fe633a065 # v1.2.1
+      - name: Run k6 test
+        uses: grafana/run-k6-action@de51a7390bdf0ac85a3bef493691bd71d4c7c158 # v1.4.0
+        env:
+          BASE_URL: "http://localhost:3355"
+        with:
+          path: |
+            ./k6/foundations/01.basic.js

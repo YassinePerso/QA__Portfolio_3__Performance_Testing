@@ -1,0 +1,50 @@
+# Terraform
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Terraform directories
+.terraform/
+.terraform.lock.hcl
+
+# Sensitive variable files
+terraform.tfvars
+terraform.tfvars.json
+*.auto.tfvars
+*.auto.tfvars.json
+
+# Plan output files
+*.tfplan
+
+# Local configuration
+.terraformrc
+terraform.rc
+
+# dependencies
+node_modules
+
+# production build
+.svelte-kit
+build
+
+# secrets
+.env
+
+bin
+fly.toml
+
+summary.json
+screenshot.png
+screenshots
+k6/k6
+k6/extensions/internal/k6
+k6/extensions/k6
+
+.vscode
+quickpizza.db
+logs.txt
