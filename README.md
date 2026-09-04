@@ -1,8 +1,8 @@
 # Test de performance sur QuickPizza (k6)
 
-Petit projet perso pour progresser sur les tests de charge/perf avec k6, sur l'app de démo [QuickPizza](https://github.com/grafana/quickpizza) (l'app officielle de Grafana pour s'entraîner au perf testing).
+Portfolio #3 pour progresser sur les tests de charge/perf avec k6, sur l'app de démo [QuickPizza](https://github.com/grafana/quickpizza) (l'app officielle de Grafana pour s'entraîner au perf testing).
 
-Les scripts et l'analyse sont dans `tests/` et `analysis/` → le reste du repo, c'est le code de QuickPizza lui-même (pas mon travail).
+Les scripts et l'analyse sont dans `tests/` et `analysis/` → le reste du repo, c'est le code de QuickPizza lui-même (pas mon code propre).
 
 ## Objectif
 
