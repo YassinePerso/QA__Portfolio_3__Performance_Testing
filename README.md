@@ -65,7 +65,6 @@ Donc "le point faible" dépend de la métrique qu'on regarde : login est plus fi
 
 - Pour le test sur `/login`, j'ai utilisé un seul utilisateur de test pour toute la charge. En usage réel, ce serait plusieurs utilisateurs différents → ça peut changer le comportement observé (contention possible sur une seule ligne en base plutôt qu'un vrai coût de calcul répété).
 - Les seuils du load test (p95 < 500ms, erreur < 1%) sont basés sur des conventions générales du secteur, pas sur un vrai SLA métier (on n'en a pas ici, vu que c'est une app de démo).
-- Je voulais visualiser tout ça dans Grafana en temps réel, mais je n'ai pas réussi à faire fonctionner les dashboards préconfigurés (métriques bien envoyées à Prometheus, mais panels vides). J'ai contourné en exportant les résultats bruts en JSON et en les analysant avec un petit script Python (`analysis/analyze_stages.py`).
 - Le test tourne en local sur ma machine → les chiffres absolus ne sont pas transférables à un environnement de prod, seule la tendance relative (où ça commence à dégrader) est intéressante ici.
 
 ## Reproduire le test
