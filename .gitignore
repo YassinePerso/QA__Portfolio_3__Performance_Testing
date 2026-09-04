@@ -48,3 +48,8 @@ k6/extensions/k6
 .vscode
 quickpizza.db
 logs.txt
+
+# Mes fichiers de résultats bruts (trop lourds)
+full-results*.json
+resultats.json
+main.zip
