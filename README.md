@@ -83,3 +83,88 @@ k6 run --out json=full-results.json tests/stress-test-tagged.js
 # Analyser les résultats du stress test par palier
 python3 analysis/analyze_stages.py full-results.json
 ```
+# Performance Testing on QuickPizza (k6)
+
+Portfolio #3 to level up on load/performance testing with k6, using the demo app [QuickPizza](https://github.com/grafana/quickpizza) (Grafana's official app for practicing performance testing).
+
+The scripts and the analysis are in `tests/` and `analysis/` → the rest of the repo is QuickPizza's own code (not mine).
+
+## Goal
+
+It started with a simple question: do all the endpoints of an API behave the same under load? My hunch was that `/api/users/token/login` (which hashes passwords) would break before `/api/pizza` (a simple read/generation). The goal of the project was to check this with real numbers instead of assuming it.
+
+## Stack
+
+- **k6** for load testing
+- **Docker / Docker Compose** to run QuickPizza + Postgres
+- **Grafana / Prometheus** for observability (with limitations, see below)
+- **Python** to analyze the raw results per load stage
+
+## Methodology
+
+I started without arbitrary predefined thresholds → the idea was to observe first, then set criteria based on real data.
+
+**1. Smoke test** → check that the app responds correctly under low load (5 VUs).
+
+**2. Exploratory test** → gradual ramp-up from 5 to 100 VUs, to get a first idea of how the app behaves. Result: no notable degradation over this range, so I needed to push further.
+
+**3. Load test** → once it was clear the app held up comfortably over the explored range, I set clear thresholds in advance (`p95 < 500ms`, `error rate < 1%`) and tested at 200 VUs (a load considered "normal" given the previous observations). Result: **PASSED** on both thresholds.
+
+**4. Stress test with per-stage tags** → ramp-up in distinct stages (150 → 250 → 400 → 600 → 800 VUs), each stage tagged individually in k6, so I could analyze how the metrics evolve stage by stage (rather than a global summary that hides the progression).
+
+**5. Targeted comparison** → same method applied to `/api/users/token/login`, to compare it directly with the `/api/pizza` results.
+
+## Results
+
+### `/api/pizza`
+
+| Stage | Requests | Avg (ms) | p95 (ms) | p99 (ms) | Error rate |
+|-------|----------|----------|----------|----------|------------|
+| 150 VUs | 7,888 | 152.3 | 368.3 | 508.6 | 0.00% |
+| 250 VUs | 12,479 | 213.1 | 547.4 | 991.3 | 0.00% |
+| 400 VUs | 15,774 | 536.0 | 1069.2 | 1345.6 | 0.00% |
+| 600 VUs | 15,852 | 1317.1 | 1968.3 | 2314.2 | 0.09% |
+| 800 VUs | 15,335 | 2190.7 | 3225.7 | 3666.9 | 2.65% |
+
+### `/api/users/token/login`
+
+| Stage | Requests | Avg (ms) | p95 (ms) | p99 (ms) | Error rate |
+|-------|----------|----------|----------|----------|------------|
+| 150 VUs | 8,433 | 75.7 | 106.2 | 383.5 | 0.00% |
+| 250 VUs | 11,935 | 269.3 | 494.6 | 1147.1 | 0.00% |
+| 400 VUs | 12,155 | 1010.1 | 1477.1 | 1953.5 | 0.00% |
+| 600 VUs | 12,347 | 2042.5 | 3109.4 | 4127.9 | 0.00% |
+| 800 VUs | 12,413 | 3014.2 | 5236.5 | 6750.4 | 0.00% |
+
+## What the results show
+
+My starting hypothesis was half right, and that's the most interesting part.
+
+`/api/pizza` stays faster below 400 VUs, but starts producing real errors (401/500) from 600 VUs, with a 2.65% failure rate at 800 VUs.
+
+`/api/users/token/login`, on the other hand, produces **no errors at all** over the whole tested range → but its latency explodes much faster (p95 of 5.2s vs 3.2s for pizza, at 800 VUs).
+
+So "the weak point" depends on which metric you look at: login is more reliable but slower under load, while pizza is faster but less reliable beyond a certain threshold. The app's overall breaking point lies somewhere between 400 and 600 VUs, which is where both behaviors start to degrade significantly.
+
+## Limitations (worth keeping in mind)
+
+- For the `/login` test, I used a single test user for the entire load. In real usage there would be many different users → this could change the observed behavior (possible contention on a single database row rather than a genuine, repeated computation cost).
+- The load test thresholds (p95 < 500ms, error rate < 1%) are based on general industry conventions, not on a real business SLA (there isn't one here, since it's a demo app).
+- The test runs locally on my machine → the absolute numbers can't be transferred to a production environment; only the relative trend (where degradation starts) is meaningful here.
+
+## Reproducing the test
+
+```bash
+# Clone QuickPizza and start the stack
+git clone https://github.com/grafana/quickpizza.git
+cd quickpizza
+docker compose -f compose.grafana-local-stack.monolithic.yaml up -d
+
+# Copy this repo's scripts into tests/
+k6 run tests/exploratoire.js
+k6 run tests/load-test.js
+k6 run --out json=full-results.json tests/stress-test-tagged.js
+
+# Analyze the stress test results per stage
+python3 analysis/analyze_stages.py full-results.json
+```
